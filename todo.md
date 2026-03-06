@@ -49,3 +49,8 @@
 - [ ] 新增 DecisionFeed 决策卡片流（三区域布局 + 滑动手势）
 - [ ] 新增 CommanderChat AI 对话（打字机动效 + ActionCard）
 - [ ] 重写询盘/设置页为 bibikaodi4 风格
+
+## Tab 清理（2026-03-06）
+- [x] 删除 app/(tabs)/assets.tsx（旧版资产托管页）
+- [x] 删除 app/(tabs)/inquiries.tsx（旧版询盘管理页）
+- [x] 从 Tab 导航中移除对应入口（两个文件本就不在 bibikaodi4 Tab 导航中）
