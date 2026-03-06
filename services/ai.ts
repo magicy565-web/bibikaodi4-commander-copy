@@ -384,6 +384,66 @@ function getMockResponse(input: string, currentPlan?: AIPlan['plan']): AIPlan {
     };
   }
 
+  // 市场报告
+  if (lower.includes('市场报告') || lower.includes('行业报告') || lower.includes('数据报告')) {
+    const market = extractMarket(lower);
+    return {
+      reply: `正在准备${market ? market : '目标市场'}市场报告。Scout 将整合海关数据、行业动态和竞争格局，生成一份可直接用于决策的深度报告。`,
+      hasPlan: true,
+      plan: {
+        id: `plan-${Date.now()}`,
+        type: 'market_report',
+        title: `生成${market ? market : '目标市场'}市场深度报告`,
+        suggestedAction: `生成《${market ?? '目标市场'} 2025 市场机会报告》（含采购商名单）`,
+        channel: '报告',
+        agentId: '1', agentName: 'Scout · 市场猎手',
+        estimatedValue: '$60,000+',
+        estimatedTime: '2 小时',
+        reasoning: '系统性市场报告是制定进入策略的核心依据。',
+        entities: { market: market ?? undefined, urgency: 'medium' },
+      },
+    };
+  }
+
+  // 社媒内容生成
+  if (lower.includes('社媒') || lower.includes('帖子') || lower.includes('linkedin发') || lower.includes('发布内容')) {
+    const market = extractMarket(lower);
+    return {
+      reply: `收到社媒内容生成指令。Muse 将根据您的产品特点和${market ? market : '目标市场'}的文化偏好，生成高互动率的 LinkedIn 帖子和图文内容。`,
+      hasPlan: true,
+      plan: {
+        id: `plan-${Date.now()}`,
+        type: 'content_post',
+        title: `生成${market ? market : ''}社媒营销内容`,
+        suggestedAction: `生成 LinkedIn 帖子 + 配图文案（${market ?? '多语言'}版本）`,
+        channel: 'LinkedIn',
+        agentId: '4', agentName: 'Muse · 内容创作',
+        estimatedTime: '30 分钟',
+        reasoning: '本地化社媒内容互动率比通用内容高 3.2 倍。',
+        entities: { market: market ?? undefined, channel: 'LinkedIn', urgency: 'low' },
+      },
+    };
+  }
+
+  // 资产库健康度分析
+  if (lower.includes('资产') || lower.includes('知识库') || lower.includes('资料库')) {
+    return {
+      reply: '已分析您的资产库状态。当前有 2 个资产已激活（平均激活分 91），1 个正在训练中，1 个待处理。建议优先完成「商务合作协议模板」的训练，可提升 AI 回复询盘的专业度。',
+      hasPlan: true,
+      plan: {
+        id: `plan-${Date.now()}`,
+        type: 'strategy',
+        title: '优化资产库激活率',
+        suggestedAction: '分析资产库健康度并推荐补充内容',
+        channel: '报告',
+        agentId: '2', agentName: 'Sage · 策略顾问',
+        estimatedTime: '15 分钟',
+        reasoning: '高质量资产库是 AI 精准推荐的基础，当前激活率有提升空间。',
+        entities: { urgency: 'low' },
+      },
+    };
+  }
+
   // 竞品分析
   if (lower.includes('竞品') || lower.includes('竞争对手') || lower.includes('对标')) {
     return {
