@@ -1,9 +1,8 @@
 /**
  * Commander Boss Phone — 设计系统
- * 合并 bibikaodi4 的 C/SPRING 设计常量 + commander-mobile 的类型导出
+ * Apple Watch Ultra 风格：纯黑 + 紫色主色 + 弹簧动画
+ * 从 bibikaodi4 迁移并适配 Expo SDK 54
  */
-
-// ─── bibikaodi4 设计常量 ──────────────────────────────────────
 export const C = {
   // 背景
   bg: '#000000',
@@ -45,13 +44,3 @@ export const SPRING_BOUNCY = {
   stiffness: 380,
   damping: 22,
 };
-
-// ─── commander-mobile 类型兼容导出 ───────────────────────────
-export {
-  Colors,
-  Fonts,
-  SchemeColors,
-  ThemeColors,
-  type ColorScheme,
-  type ThemeColorPalette,
-} from "@/lib/_core/theme";

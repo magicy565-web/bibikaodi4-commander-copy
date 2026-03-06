@@ -19,6 +19,7 @@ import {
 import type { EdgeInsets, Metrics, Rect } from "react-native-safe-area-context";
 
 import { trpc, createTRPCClient } from "@/lib/trpc";
+import { StoreProvider } from "@/constants/store";
 import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
 
 const DEFAULT_WEB_INSETS: EdgeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
@@ -99,11 +100,15 @@ export default function RootLayout() {
           {/* Default to hiding native headers so raw route segments don't appear (e.g. "(tabs)", "products/[id]"). */}
           {/* If a screen needs the native header, explicitly enable it and set a human title via Stack.Screen options. */}
           {/* in order for ios apps tab switching to work properly, use presentation: "fullScreenModal" for login page, whenever you decide to use presentation: "modal*/}
+          <StoreProvider>
           <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "#000000" } }}>
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="login" />
             <Stack.Screen name="oauth/callback" />
+            <Stack.Screen name="task-progress" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+            <Stack.Screen name="settings" options={{ animation: 'slide_from_right' }} />
           </Stack>
+          </StoreProvider>
           <StatusBar style="light" />
         </QueryClientProvider>
       </trpc.Provider>

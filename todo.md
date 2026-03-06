@@ -37,3 +37,15 @@
 - [ ] 真实 AI 接口联调（当前为 mock 数据演示）
 - [ ] Android APK 构建与真机测试
 - [ ] 演示流程脚本完善
+
+## 设计迁移（bibikaodi4 Apple Watch Ultra 风格）
+- [ ] 安装 moti、lucide-react-native、expo-linear-gradient 依赖
+- [ ] 迁移 constants/theme.ts（C 颜色系统 + SPRING 动画配置）
+- [ ] 迁移 constants/store.tsx（全局状态管理 + 任务闭环）
+- [ ] 迁移 services/ai.ts（Commander AI 意图识别 + 12 外贸场景）
+- [ ] 重写首页为 Watch Face 表盘样式（超大时钟 + 快速统计 + 数字员工动态）
+- [ ] 重写 Tab 导航（MotiView 弹簧动画 + lucide 图标）
+- [ ] 重写 AssetVault（活动环 + LinearGradient 上传区域）
+- [ ] 新增 DecisionFeed 决策卡片流（三区域布局 + 滑动手势）
+- [ ] 新增 CommanderChat AI 对话（打字机动效 + ActionCard）
+- [ ] 重写询盘/设置页为 bibikaodi4 风格
