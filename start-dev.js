@@ -1,42 +1,40 @@
 #!/usr/bin/env node
 
-const { spawn } = require('child_process');
-const path = require('path');
+import { spawnSync } from 'child_process';
+import fs from 'fs';
+import path from 'path';
 
-const projectDir = process.cwd();
+const cwd = process.cwd();
 
-console.log('📦 Installing dependencies with pnpm...');
-
-// First install dependencies
-const install = spawn('pnpm', ['install'], {
-  cwd: projectDir,
-  stdio: 'inherit',
-  shell: true
-});
-
-install.on('close', (code) => {
-  if (code === 0) {
-    console.log('\n✅ Dependencies installed\n');
-    console.log('🚀 Starting Expo Web server...');
-    
-    // Then start the web server
-    const start = spawn('pnpm', ['web'], {
-      cwd: projectDir,
-      stdio: 'inherit',
-      shell: true
-    });
-
-    start.on('error', (err) => {
-      console.error('❌ Failed to start:', err);
-      process.exit(1);
-    });
-  } else {
-    console.error('❌ Installation failed');
-    process.exit(1);
+console.log('🧹 清理缓存...');
+try {
+  // 清理 Expo 缓存
+  const cacheDir = path.join(cwd, '.expo');
+  if (fs.existsSync(cacheDir)) {
+    fs.rmSync(cacheDir, { recursive: true, force: true });
+    console.log('✅ Expo 缓存已清理');
   }
-});
+} catch (error) {
+  console.log('⚠️  缓存清理出现问题，继续...');
+}
 
-install.on('error', (err) => {
-  console.error('❌ Installation error:', err);
-  process.exit(1);
+console.log('📦 安装依赖...');
+try {
+  spawnSync('npm', ['install', '--legacy-peer-deps'], { 
+    cwd, 
+    stdio: 'inherit',
+    shell: process.platform === 'win32'
+  });
+  console.log('✅ 依赖安装完成\n');
+} catch (error) {
+  console.error('安装失败:', error.message);
+}
+
+console.log('🚀 启动 Expo Web...\n');
+
+// 使用 spawnSync 以保持进程运行
+spawnSync('npx', ['expo', 'start', '--web', '--clear'], {
+  cwd,
+  stdio: 'inherit',
+  shell: process.platform === 'win32'
 });
