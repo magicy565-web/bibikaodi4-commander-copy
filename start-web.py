@@ -4,7 +4,7 @@ import subprocess
 import os
 import sys
 
-project_dir = os.path.dirname(os.path.abspath(__file__))
+project_dir = os.getcwd()
 
 print("📦 Installing dependencies...")
 try:
