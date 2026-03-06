@@ -13,7 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle } from 'react-native-svg';
 import {
   Upload, FileText, Image, Film, Package,
-  CheckCircle, Clock, Zap, X, Plus,
+  CheckCircle, Clock, Zap, X, Plus, Award,
 } from 'lucide-react-native';
 import { hapticLight, hapticMedium, hapticSuccess } from '@/constants/haptics';
 import { C } from '@/constants/theme';
@@ -104,10 +104,11 @@ const ASSET_TYPE_CONFIG: Record<AssetType, {
   color: string;
   bgColor: string;
 }> = {
-  product:  { label: '产品图册', icon: Package,     color: C.amber,   bgColor: C.amber + '20' },
-  document: { label: '商务文档', icon: FileText,    color: C.blue,    bgColor: C.blue + '20' },
-  case:     { label: '成功案例', icon: CheckCircle, color: C.green,   bgColor: C.green + '20' },
-  media:    { label: '视频/图片', icon: Film,       color: '#A78BFA', bgColor: '#A78BFA20' },
+  product:     { label: '产品图册', icon: Package,     color: C.amber,   bgColor: C.amber + '20' },
+  document:    { label: '商务文档', icon: FileText,    color: C.blue,    bgColor: C.blue + '20' },
+  case:        { label: '成功案例', icon: CheckCircle, color: C.green,   bgColor: C.green + '20' },
+  media:       { label: '视频/图片', icon: Film,       color: '#A78BFA', bgColor: '#A78BFA20' },
+  certificate: { label: '认证证书', icon: Award,      color: '#F59E0B', bgColor: '#F59E0B20' },
 };
 
 const STATUS_CONFIG = {

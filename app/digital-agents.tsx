@@ -102,13 +102,34 @@ interface Agent {
 }
 
 const BASE_AGENTS: Agent[] = [
-  { id: '1', name: 'Scout', role: '市场猎手', status: 'working', color: C.blue, currentTask: '扫描东南亚不锈钢市场', completedToday: 12, uptime: '18h 42m', efficiency: 94 },
-  { id: '2', name: 'Sage',  role: '策略顾问', status: 'standby', color: C.PL,  completedToday: 8,  uptime: '24h 0m',  efficiency: 88 },
-  { id: '3', name: 'Echo',  role: '客服专员', status: 'busy',    color: C.green, currentTask: '回复询盘 #INQ-047', completedToday: 23, uptime: '24h 0m',  efficiency: 96 },
-  { id: '4', name: 'Muse',  role: '内容创作', status: 'working', color: C.amber, currentTask: '生成中东风格海报', completedToday: 5,  uptime: '12h 30m', efficiency: 91 },
+  {
+    id: '1', name: 'Scout', role: '市场猎手', status: 'working', color: C.blue,
+    currentTask: '扫描 LinkedIn 中东家居采购商，已发现 47 条线索',
+    completedToday: 47, uptime: '18h 42m', efficiency: 94,
+  },
+  {
+    id: '2', name: 'Sage',  role: '策略顾问', status: 'standby', color: C.PL,
+    completedToday: 8, uptime: '24h 0m', efficiency: 88,
+  },
+  {
+    id: '3', name: 'Echo',  role: '客服专员', status: 'busy', color: C.green,
+    currentTask: '起草 Ahmed Al-Rashid KS-837 英文报价回复',
+    completedToday: 23, uptime: '24h 0m', efficiency: 96,
+  },
+  {
+    id: '4', name: 'Muse',  role: '内容创作', status: 'working', color: C.amber,
+    currentTask: '生成「沙漠奢华风」 KS-837 阿拉伯语图册',
+    completedToday: 5, uptime: '12h 30m', efficiency: 91,
+  },
 ];
 
-const PRESET_TASKS = ['扫描新市场机会', '回复高意向询盘', '生成产品推广报告', '分析竞品价格动态'];
+const PRESET_TASKS = [
+  '扫描中东家具采购商线索',
+  '回复 Ahmed 询盘报价邮件',
+  '生成迪拜市场进入报告',
+  '分析斜月季最优报价策略',
+  '生成 KS-837 阿拉伯语产品图册',
+];
 
 const STATUS_CONFIG = {
   working: { label: '工作中', color: C.green, icon: Play },

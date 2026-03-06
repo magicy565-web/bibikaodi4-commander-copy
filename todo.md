@@ -54,3 +54,24 @@
 - [x] 删除 app/(tabs)/assets.tsx（旧版资产托管页）
 - [x] 删除 app/(tabs)/inquiries.tsx（旧版询盘管理页）
 - [x] 从 Tab 导航中移除对应入口（两个文件本就不在 bibikaodi4 Tab 导航中）
+
+## 演示方案重设计（2026-03-06）
+- [x] 新建 CRM 客户列表页（app/(tabs)/crm.tsx）
+- [x] 新建 CRM 客户详情页（app/crm/[id].tsx）
+- [ ] 资产库新增"资产能力包"可视化区块（雷达图/标签网格）
+- [ ] Tab 导航调整：团队→客户(CRM)
+- [ ] AI 开发信生成（真实 LLM 调用，在 commander-chat ActionCard 中展开）
+- [ ] 决策流填充真实感外贸场景数据（家纺/家具 + 沙特/中东市场）
+- [x] CRM 客户详情：AI 采购意图分析 + 会议辅助建议卡
+- [ ] 更新 V0_DESIGN_BRIEF.md 加入 CRM 页面提示词
+
+## 结构重构（2026-03-06）
+- [ ] Tab 导航调整为 4 个：主页/决策/客户/对话
+- [ ] 首页重写：集成资产健康度区块（点击→资产管理页）
+- [ ] 首页重写：集成数字员工动态区块（点击→员工详情页）
+- [ ] asset-vault.tsx 移出 tabs → app/asset-vault.tsx（独立页面）
+- [ ] digital-agents.tsx 移出 tabs → app/digital-agents.tsx（独立页面）
+- [x] 新建 app/(tabs)/crm.tsx（客户列表页）
+- [x] 新建 app/crm/[id].tsx（客户详情页）
+- [ ] 决策流填充家纺/家具+中东市场真实感数据
+- [x] CRM 填充 4 个演示客户（Ahmed/Priya/Fatima/Nguyen）

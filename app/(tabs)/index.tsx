@@ -260,7 +260,7 @@ export default function WatchFaceScreen() {
               alignItems: 'center', marginBottom: 12,
             }}>
               <Text style={{ color: C.t1, fontSize: 16, fontWeight: '600' }}>数字员工动态</Text>
-              <Pressable onPress={() => { hapticLight(); router.push('/(tabs)/digital-agents'); }}>
+              <Pressable onPress={() => { hapticLight(); router.push('/digital-agents'); }}>
                 <Text style={{ color: '#A78BFA', fontSize: 13 }}>查看全部</Text>
               </Pressable>
             </View>
