@@ -11,9 +11,9 @@ type ThemeContextValue = {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
+export function ThemeProvider({ children, defaultScheme }: { children: React.ReactNode; defaultScheme?: ColorScheme }) {
   const systemScheme = useSystemColorScheme() ?? "light";
-  const [colorScheme, setColorSchemeState] = useState<ColorScheme>(systemScheme);
+  const [colorScheme, setColorSchemeState] = useState<ColorScheme>(defaultScheme ?? systemScheme);
 
   const applyScheme = useCallback((scheme: ColorScheme) => {
     nativewindColorScheme.set(scheme);
@@ -50,6 +50,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         "color-success": SchemeColors[colorScheme].success,
         "color-warning": SchemeColors[colorScheme].warning,
         "color-error": SchemeColors[colorScheme].error,
+        "color-primaryLight": (SchemeColors[colorScheme] as any).primaryLight ?? SchemeColors[colorScheme].primary,
+        "color-surface2": (SchemeColors[colorScheme] as any).surface2 ?? SchemeColors[colorScheme].surface,
+        "color-subtle": (SchemeColors[colorScheme] as any).subtle ?? SchemeColors[colorScheme].muted,
+        "color-blue": (SchemeColors[colorScheme] as any).blue ?? "#60A5FA",
+        "color-amber": (SchemeColors[colorScheme] as any).amber ?? "#FCD34D",
+        "color-tint": (SchemeColors[colorScheme] as any).tint ?? SchemeColors[colorScheme].primary,
       }),
     [colorScheme],
   );
@@ -61,7 +67,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }),
     [colorScheme, setColorScheme],
   );
-  console.log(value, themeVariables)
+  // Force dark mode on mount
+  useEffect(() => {
+    if (defaultScheme) {
+      applyScheme(defaultScheme);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <ThemeContext.Provider value={value}>

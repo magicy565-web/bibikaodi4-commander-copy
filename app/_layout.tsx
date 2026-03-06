@@ -8,6 +8,8 @@ import "react-native-reanimated";
 import { Platform } from "react-native";
 import "@/lib/_core/nativewind-pressable";
 import { ThemeProvider } from "@/lib/theme-provider";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
 import {
   SafeAreaFrameContext,
   SafeAreaInsetsContext,
@@ -26,7 +28,19 @@ export const unstable_settings = {
   anchor: "(tabs)",
 };
 
+function useAuthRedirect() {
+  useEffect(() => {
+    (async () => {
+      const loggedIn = await AsyncStorage.getItem("commander_logged_in");
+      if (!loggedIn) {
+        router.replace("/login");
+      }
+    })();
+  }, []);
+}
+
 export default function RootLayout() {
+  useAuthRedirect();
   const initialInsets = initialWindowMetrics?.insets ?? DEFAULT_WEB_INSETS;
   const initialFrame = initialWindowMetrics?.frame ?? DEFAULT_WEB_FRAME;
 
@@ -85,11 +99,12 @@ export default function RootLayout() {
           {/* Default to hiding native headers so raw route segments don't appear (e.g. "(tabs)", "products/[id]"). */}
           {/* If a screen needs the native header, explicitly enable it and set a human title via Stack.Screen options. */}
           {/* in order for ios apps tab switching to work properly, use presentation: "fullScreenModal" for login page, whenever you decide to use presentation: "modal*/}
-          <Stack screenOptions={{ headerShown: false }}>
+          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "#000000" } }}>
             <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="login" />
             <Stack.Screen name="oauth/callback" />
           </Stack>
-          <StatusBar style="auto" />
+          <StatusBar style="light" />
         </QueryClientProvider>
       </trpc.Provider>
     </GestureHandlerRootView>
@@ -99,7 +114,7 @@ export default function RootLayout() {
 
   if (shouldOverrideSafeArea) {
     return (
-      <ThemeProvider>
+      <ThemeProvider defaultScheme={"dark"}>
         <SafeAreaProvider initialMetrics={providerInitialMetrics}>
           <SafeAreaFrameContext.Provider value={frame}>
             <SafeAreaInsetsContext.Provider value={insets}>
@@ -112,7 +127,7 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider>
+    <ThemeProvider defaultScheme={"dark"}>
       <SafeAreaProvider initialMetrics={providerInitialMetrics}>{content}</SafeAreaProvider>
     </ThemeProvider>
   );
