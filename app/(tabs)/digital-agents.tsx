@@ -2,16 +2,92 @@
  * DigitalAgents — 数字员工团队管理（MVP 闭环联动版）
  * 接入全局 store，实时显示从决策中心下发的任务进度
  */
-import { useState } from 'react';
-import { View, Text, ScrollView, Pressable, Modal } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, Text, ScrollView, Pressable, Modal, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MotiView, AnimatePresence } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Play, Pause, Plus, AlertCircle, ArrowRight, X } from 'lucide-react-native';
+import Svg, { Circle, Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
+import Animated, { useSharedValue, useAnimatedProps, withTiming, Easing } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { hapticLight, hapticMedium, hapticSuccess } from '@/constants/haptics';
 import { C, SPRING, SPRING_GENTLE } from '@/constants/theme';
 import { useStore, Task } from '@/constants/store';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
+// ─── Hero 弧形仪表盘（v0 Apple Watch Ultra 风格）────────────────
+
+function HeroGauge({ workingCount, totalCount }: { workingCount: number; totalCount: number }) {
+  const progress = useSharedValue(0);
+  const percentage = totalCount > 0 ? workingCount / totalCount : 0;
+  const size = 180;
+  const strokeWidth = 12;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+
+  useEffect(() => {
+    progress.value = withTiming(percentage, { duration: 1200, easing: Easing.out(Easing.cubic) });
+  }, [percentage]);
+
+  const animatedProps = useAnimatedProps(() => ({
+    strokeDashoffset: circumference * (1 - progress.value),
+  }));
+
+  const hasWorking = workingCount > 0;
+  const glowColor = hasWorking ? C.green : C.P;
+
+  return (
+    <View style={{ alignItems: 'center', paddingVertical: 28 }}>
+      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+        <Svg width="100%" height="100%" style={{ position: 'absolute' }}>
+          <Defs>
+            <RadialGradient id="agentHeroGlow" cx="50%" cy="30%" r="60%">
+              <Stop offset="0%" stopColor={glowColor} stopOpacity="0.15" />
+              <Stop offset="100%" stopColor={glowColor} stopOpacity="0" />
+            </RadialGradient>
+          </Defs>
+          <Rect x="0" y="0" width="100%" height="100%" fill="url(#agentHeroGlow)" />
+        </Svg>
+      </View>
+      <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+        <Svg width={size} height={size} style={{ position: 'absolute' }}>
+          <Circle cx={size / 2} cy={size / 2} r={radius} stroke={C.border} strokeWidth={strokeWidth} fill="transparent" />
+          <AnimatedCircle
+            cx={size / 2} cy={size / 2} r={radius}
+            stroke={glowColor} strokeWidth={strokeWidth} fill="transparent"
+            strokeDasharray={circumference}
+            animatedProps={animatedProps}
+            strokeLinecap="round"
+            rotation="-90"
+            origin={`${size / 2}, ${size / 2}`}
+          />
+        </Svg>
+        <View style={{ alignItems: 'center' }}>
+          <Text style={{ fontSize: 72, fontWeight: '100', color: C.t1, lineHeight: 80 }}>{workingCount}</Text>
+          <Text style={{ fontSize: 14, color: C.t2, marginTop: -4 }}>员工工作中</Text>
+        </View>
+      </View>
+      <MotiView
+        from={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+        style={{ marginTop: 16, backgroundColor: glowColor + '15', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }}
+      >
+        {hasWorking && (
+          <MotiView
+            from={{ opacity: 0.4 }} animate={{ opacity: 1 }}
+            transition={{ loop: true, type: 'timing', duration: 1000 }}
+            style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: glowColor }}
+          />
+        )}
+        <Text style={{ color: glowColor, fontSize: 13, fontWeight: '600' }}>团队战斗力 {Math.round(percentage * 100)}%</Text>
+      </MotiView>
+    </View>
+  );
+}
 
 interface Agent {
   id: string;
@@ -247,7 +323,7 @@ export default function DigitalAgentsScreen() {
 
   const workingCount = agents.filter(a => a.status === 'working' || a.status === 'busy').length;
   const totalTasksToday = agents.reduce((sum, a) => sum + a.completedToday, 0);
-  const runningTasksFromDecision = state.tasks.filter(t => t.status === 'running' || t.status === 'pending').length;
+  const runningTasksFromDecision = state.tasks.filter(t => t.status === 'running'|| t.status === 'pending').length;
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
@@ -277,25 +353,22 @@ export default function DigitalAgentsScreen() {
             )}
           </View>
 
-          {/* Stats Overview */}
-          <View style={{ paddingHorizontal: 20, marginBottom: 24 }}>
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <LinearGradient colors={[C.green + '1A', C.green + '0D']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                style={{ flex: 1, borderRadius: 16, borderWidth: 1, borderColor: C.green + '40', padding: 14, alignItems: 'center' }}>
-                <Text style={{ color: C.green, fontSize: 24, fontWeight: '700' }}>{workingCount}</Text>
-                <Text style={{ color: C.t2, fontSize: 11, marginTop: 4 }}>员工工作中</Text>
-              </LinearGradient>
-              <LinearGradient colors={[C.blue + '1A', C.blue + '0D']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                style={{ flex: 1, borderRadius: 16, borderWidth: 1, borderColor: C.blue + '40', padding: 14, alignItems: 'center' }}>
-                <Text style={{ color: C.blue, fontSize: 24, fontWeight: '700' }}>{totalTasksToday}</Text>
-                <Text style={{ color: C.t2, fontSize: 11, marginTop: 4 }}>今日完成</Text>
-              </LinearGradient>
-              <LinearGradient colors={[C.P + '1A', C.P + '0D']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                style={{ flex: 1, borderRadius: 16, borderWidth: 1, borderColor: C.PL + '40', padding: 14, alignItems: 'center' }}>
-                <Text style={{ color: C.PL, fontSize: 24, fontWeight: '700' }}>{agents.length}</Text>
-                <Text style={{ color: C.t2, fontSize: 11, marginTop: 4 }}>总员工数</Text>
-              </LinearGradient>
-            </View>
+          {/* ── 区域一：Hero 弧形仪表盘（v0 Apple Watch Ultra 风格）── */}
+          <HeroGauge workingCount={workingCount} totalCount={agents.length} />
+
+          {/* ── 区域二：数据面板（竖线分隔样式）── */}
+          <View style={{ marginHorizontal: 20, backgroundColor: C.bgGlass, borderRadius: 16, paddingVertical: 16, flexDirection: 'row', marginBottom: 24 }}>
+            {[
+              { value: workingCount, label: '工作中', color: C.green },
+              { value: totalTasksToday, label: '今日完成', color: C.blue },
+              { value: agents.length, label: '总员工', color: C.PL },
+            ].map((stat, index, arr) => (
+              <View key={stat.label} style={{ flex: 1, alignItems: 'center', borderRightWidth: index < arr.length - 1 ? 1 : 0, borderRightColor: C.border }}>
+                <Text style={{ fontSize: 28, fontWeight: '700', color: C.t1 }}>{stat.value}</Text>
+                <Text style={{ fontSize: 11, color: C.t2, marginTop: 4 }}>{stat.label}</Text>
+                <View style={{ width: 24, height: 2, backgroundColor: stat.color, borderRadius: 1, marginTop: 8 }} />
+              </View>
+            ))}
           </View>
 
           {/* Agents List */}

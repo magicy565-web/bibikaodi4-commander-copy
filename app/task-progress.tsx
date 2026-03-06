@@ -2,15 +2,76 @@
  * TaskProgress — 任务执行进度追踪页（决策闭环第三步）
  * 展示所有已下发任务的实时进度、执行员工、完成结果
  */
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, ScrollView, Pressable, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MotiView, AnimatePresence } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Circle, Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
+import Animated, { useSharedValue, useAnimatedProps, withTiming, Easing } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { Check, X, Clock, Zap, ChevronLeft, ArrowRight } from 'lucide-react-native';
 import { hapticLight } from '@/constants/haptics';
 import { C, SPRING } from '@/constants/theme';
 import { useStore, Task } from '@/constants/store';
+import { useEffect } from 'react';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
+// ─── Hero 弧形仪表盘（v0 Apple Watch Ultra 风格）────────────────
+function HeroGauge({ completed, total }: { completed: number; total: number }) {
+  const progress = useSharedValue(0);
+  const targetProgress = total > 0 ? completed / total : 0;
+  const size = 200;
+  const strokeWidth = 12;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+
+  useEffect(() => {
+    progress.value = withTiming(targetProgress, { duration: 1500, easing: Easing.bezier(0.25, 0.1, 0.25, 1) });
+  }, [targetProgress]);
+
+  const animatedProps = useAnimatedProps(() => ({
+    strokeDashoffset: circumference * (1 - progress.value),
+  }));
+
+  return (
+    <View style={{ height: 260, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+        <Svg width="100%" height="100%" style={{ position: 'absolute' }}>
+          <Defs>
+            <RadialGradient id="taskHeroGlow" cx="50%" cy="50%" r="50%">
+              <Stop offset="0%" stopColor="#7C3AED" stopOpacity="0.3" />
+              <Stop offset="50%" stopColor="#7C3AED" stopOpacity="0.1" />
+              <Stop offset="100%" stopColor="#7C3AED" stopOpacity="0" />
+            </RadialGradient>
+          </Defs>
+          <Rect x="0" y="0" width="100%" height="100%" fill="url(#taskHeroGlow)" />
+        </Svg>
+      </View>
+      <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+        <Svg width={size} height={size} style={{ position: 'absolute' }}>
+          <Circle cx={size / 2} cy={size / 2} r={radius} stroke={C.border} strokeWidth={strokeWidth} fill="transparent" />
+          <AnimatedCircle
+            cx={size / 2} cy={size / 2} r={radius}
+            stroke={C.PL} strokeWidth={strokeWidth} fill="transparent"
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            animatedProps={animatedProps}
+            rotation="-90"
+            origin={`${size / 2}, ${size / 2}`}
+          />
+        </Svg>
+        <View style={{ alignItems: 'center' }}>
+          <Text style={{ fontSize: 48, fontWeight: '200', color: C.t1 }}>
+            {completed}<Text style={{ color: C.t3 }}>/{total}</Text>
+          </Text>
+          <Text style={{ fontSize: 13, color: C.t2, marginTop: 4 }}>任务完成率</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
 
 const STATUS_CONFIG = {
   pending: { label: '等待中', color: C.t3, icon: Clock },
@@ -75,7 +136,7 @@ function TaskCard({ task }: { task: Task }) {
 
       {/* 进度数字 */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-        <Text style={{ color: config.color, fontSize: 24, fontWeight: '700' }}>{task.progress}%</Text>
+          <Text style={{ color: config.color, fontSize: 40, fontWeight: '100' }}>{task.progress}<Text style={{ fontSize: 16, fontWeight: '300', color: C.t2 }}>%</Text></Text>
         {task.startedAt && (
           <Text style={{ color: C.t3, fontSize: 12 }}>开始于 {formatTime(task.startedAt)}</Text>
         )}
@@ -119,6 +180,7 @@ export default function TaskProgressScreen() {
 
   const runningCount = tasks.filter(t => t.status === 'running' || t.status === 'pending').length;
   const doneCount = tasks.filter(t => t.status === 'done').length;
+  const completedCount = doneCount;
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
@@ -142,20 +204,24 @@ export default function TaskProgressScreen() {
           </View>
         </View>
 
-        {/* 统计概览 */}
-        <View style={{ flexDirection: 'row', paddingHorizontal: 20, gap: 10, marginBottom: 20 }}>
-          <View style={{ flex: 1, backgroundColor: C.amber + '15', borderRadius: 14, borderWidth: 1, borderColor: C.amber + '30', padding: 14, alignItems: 'center' }}>
-            <Text style={{ color: C.amber, fontSize: 22, fontWeight: '700' }}>{runningCount}</Text>
-            <Text style={{ color: C.t2, fontSize: 11, marginTop: 4 }}>执行中</Text>
-          </View>
-          <View style={{ flex: 1, backgroundColor: C.green + '15', borderRadius: 14, borderWidth: 1, borderColor: C.green + '30', padding: 14, alignItems: 'center' }}>
-            <Text style={{ color: C.green, fontSize: 22, fontWeight: '700' }}>{doneCount}</Text>
-            <Text style={{ color: C.t2, fontSize: 11, marginTop: 4 }}>已完成</Text>
-          </View>
-          <View style={{ flex: 1, backgroundColor: C.PL + '15', borderRadius: 14, borderWidth: 1, borderColor: C.PL + '30', padding: 14, alignItems: 'center' }}>
-            <Text style={{ color: C.PL, fontSize: 22, fontWeight: '700' }}>{tasks.length}</Text>
-            <Text style={{ color: C.t2, fontSize: 11, marginTop: 4 }}>总任务</Text>
-          </View>
+        {/* ── 区域一：Hero 弧形仪表盘（v0 Apple Watch Ultra 风格）── */}
+        <HeroGauge completed={completedCount} total={tasks.length} />
+
+        {/* ── 区域二：数据面板（竖线分隔样式）── */}
+        <View style={{ flexDirection: 'row', marginHorizontal: 20, backgroundColor: C.bgGlass, borderRadius: 16, paddingVertical: 16, marginBottom: 20 }}>
+          {[
+            { label: '执行中', value: runningCount, color: C.amber },
+            { label: '已完成', value: doneCount, color: C.green },
+            { label: '总任务', value: tasks.length, color: C.PL },
+          ].map((item, index, arr) => (
+            <View key={item.label} style={{ flex: 1, alignItems: 'center', borderRightWidth: index < arr.length - 1 ? 1 : 0, borderRightColor: C.border }}>
+              <Text style={{ fontSize: 28, fontWeight: '300', color: C.t1 }}>{item.value}</Text>
+              <Text style={{ fontSize: 12, color: C.t2, marginTop: 4, marginBottom: 8 }}>{item.label}</Text>
+              <View style={{ width: 40, height: 2, backgroundColor: C.border, borderRadius: 1, overflow: 'hidden' }}>
+                <View style={{ width: tasks.length > 0 ? `${(item.value / tasks.length) * 100}%` : '0%', height: '100%', backgroundColor: item.color, borderRadius: 1 }} />
+              </View>
+            </View>
+          ))}
         </View>
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}>
