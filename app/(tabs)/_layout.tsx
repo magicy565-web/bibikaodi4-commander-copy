@@ -1,13 +1,14 @@
 import { Tabs } from 'expo-router';
 import { View, Text, Pressable } from 'react-native';
 import { MotiView } from 'moti';
-import { Home, Layers, Brain, MessageSquare, Users } from 'lucide-react-native';
+import { Home, Layers, Brain, MessageSquare, Users, Users2 } from 'lucide-react-native';
 import { hapticLight } from '@/constants/haptics';
 import { C } from '@/constants/theme';
 
 const TABS = [
   { name: 'index', label: '主页', icon: Home },
   { name: 'decision-feed', label: '决策', icon: Layers },
+  { name: 'crm', label: '客户', icon: Users2 },
   { name: 'asset-vault', label: '资产', icon: Brain },
   { name: 'commander-chat', label: '对话', icon: MessageSquare },
   { name: 'digital-agents', label: '团队', icon: Users },
@@ -60,6 +61,13 @@ export default function TabLayout() {
           tabBarIcon: ({ focused, color }) => <TabBarIcon icon={Layers} focused={focused} color={color} />,
           tabBarBadge: 3,
           tabBarBadgeStyle: { backgroundColor: '#ef4444', fontSize: 10 },
+        }}
+      />
+      <Tabs.Screen
+        name="crm"
+        options={{
+          title: '客户',
+          tabBarIcon: ({ focused, color }) => <TabBarIcon icon={Users2} focused={focused} color={color} />,
         }}
       />
       <Tabs.Screen
