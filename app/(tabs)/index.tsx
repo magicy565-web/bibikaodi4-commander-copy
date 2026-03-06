@@ -1,6 +1,6 @@
 /**
  * Watch Face — Commander Boss Phone 首页表盘
- * v2: 接入全局 store，数据真实化；修复路由 404
+ * v3: 升级版 — KPI 环形图、营收趋势、资产健康、员工动态、紧急决策横幅
  */
 import { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Pressable, Dimensions } from 'react-native';
@@ -8,80 +8,69 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MotiView, MotiText } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { Activity, Zap, TrendingUp, Bell, Settings, ChevronRight, Globe, Users } from 'lucide-react-native';
+import { Zap, ChevronRight, TrendingUp, Users, Package, Globe, AlertCircle } from 'lucide-react-native';
+import { PieChart, LineChart } from 'react-native-gifted-charts';
 import { hapticLight, hapticMedium } from '@/constants/haptics';
-import { C } from '@/constants/theme';
+import { C, SPRING } from '@/constants/theme';
 import { useStore } from '@/constants/store';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
-// 数字员工静态配置（状态由 store 中的 tasks 派生）
+// 数字员工静态配置
 const AGENTS_CONFIG = [
-  { id: '1', name: 'Scout', role: '市场猎手', color: C.blue },
-  { id: '2', name: 'Sage',  role: '策略顾问', color: '#A78BFA' },
-  { id: '3', name: 'Echo',  role: '客服专员', color: C.green },
-  { id: '4', name: 'Muse',  role: '内容创作', color: C.amber },
+  { id: '1', name: 'Scout', role: '市场猎手', color: C.blue, task: '扫描迪拜市场机会' },
+  { id: '2', name: 'Rex',   role: '开发专员', color: '#A78BFA', task: '开发 Ahmed Al-Rashid' },
+  { id: '3', name: 'Echo',  role: '客服专员', color: C.green, task: '回复 Priya 询盘' },
 ];
 
-function AgentRow({
-  agent,
-  currentTask,
-}: {
-  agent: typeof AGENTS_CONFIG[0];
-  currentTask?: { title: string; status: string };
-}) {
-  const isWorking = !!currentTask && (currentTask.status === 'running' || currentTask.status === 'pending');
-  const statusColor = isWorking ? C.green : C.t3;
+// 营收趋势数据（月度，单位 $K）
+const REVENUE_DATA = [
+  { value: 42 }, { value: 58 }, { value: 51 }, { value: 67 },
+  { value: 73 }, { value: 89 }, { value: 95 }, { value: 88 },
+  { value: 102 }, { value: 118 }, { value: 124 }, { value: 138 },
+];
 
-  return (
-    <MotiView
-      from={{ opacity: 0, translateX: -12 }}
-      animate={{ opacity: 1, translateX: 0 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-      style={{
-        backgroundColor: 'rgba(255,255,255,0.04)',
-        borderRadius: 14,
-        padding: 12,
-        marginBottom: 8,
-        borderWidth: 1,
-        borderColor: isWorking ? agent.color + '30' : 'rgba(255,255,255,0.07)',
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-      }}
-    >
-      {/* Avatar */}
-      <View style={{
-        width: 36, height: 36, borderRadius: 18,
-        backgroundColor: agent.color + '25',
-        alignItems: 'center', justifyContent: 'center',
-      }}>
-        <Text style={{ color: agent.color, fontWeight: '700', fontSize: 14 }}>{agent.name[0]}</Text>
-      </View>
+// KPI 环形图数据
+const KPI_RINGS = [
+  {
+    label: '今日询盘',
+    centerText: '8',
+    centerFontSize: 18,
+    data: [
+      { value: 8, color: C.blue },
+      { value: 2, color: 'rgba(255,255,255,0.08)' },
+    ],
+    color: C.blue,
+  },
+  {
+    label: '成交率',
+    centerText: '73%',
+    centerFontSize: 14,
+    data: [
+      { value: 73, color: C.green },
+      { value: 27, color: 'rgba(255,255,255,0.08)' },
+    ],
+    color: C.green,
+  },
+  {
+    label: '平均响应',
+    centerText: '4min',
+    centerFontSize: 12,
+    data: [
+      { value: 94, color: C.amber },
+      { value: 6, color: 'rgba(255,255,255,0.08)' },
+    ],
+    color: C.amber,
+  },
+];
 
-      {/* Info */}
-      <View style={{ flex: 1 }}>
-        <Text style={{ color: C.t1, fontWeight: '600', fontSize: 13 }}>
-          {agent.name} · {agent.role}
-        </Text>
-        <Text style={{ color: isWorking ? C.t2 : C.t3, fontSize: 11, marginTop: 2 }} numberOfLines={1}>
-          {currentTask ? currentTask.title : '待命中'}
-        </Text>
-      </View>
-
-      {/* Status dot */}
-      {isWorking ? (
-        <MotiView
-          animate={{ scale: [1, 1.4, 1], opacity: [1, 0.5, 1] }}
-          transition={{ loop: true, duration: 1800 }}
-          style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: C.green }}
-        />
-      ) : (
-        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: C.t3 }} />
-      )}
-    </MotiView>
-  );
-}
+// 资产健康数据
+const ASSET_PILLS = [
+  { icon: '✅', name: '产品图册', detail: '156款', color: C.green, status: 'active' },
+  { icon: '✅', name: '工厂视频', detail: '8个', color: C.green, status: 'active' },
+  { icon: '✅', name: '质量认证', detail: '12项', color: C.green, status: 'active' },
+  { icon: '🔄', name: '市场案例', detail: '更新中', color: C.amber, status: 'updating' },
+];
 
 export default function WatchFaceScreen() {
   const [time, setTime] = useState(new Date());
@@ -97,6 +86,7 @@ export default function WatchFaceScreen() {
 
   const hh = time.getHours().toString().padStart(2, '0');
   const mm = time.getMinutes().toString().padStart(2, '0');
+  const ss = time.getSeconds().toString().padStart(2, '0');
 
   // 每个员工当前正在执行的任务（从 store 派生）
   const agentTaskMap = AGENTS_CONFIG.reduce<Record<string, { title: string; status: string } | undefined>>(
@@ -110,107 +100,43 @@ export default function WatchFaceScreen() {
     {}
   );
 
-  // Quick Stats — 全部从 store 派生
-  const QUICK_STATS = [
-    {
-      label: '待决策',
-      value: stats.pendingDecisions,
-      color: C.amber,
-      icon: Zap,
-      onPress: () => { hapticLight(); router.push('/(tabs)/decision-feed'); },
-    },
-    {
-      label: '新线索',
-      value: stats.newLeads,
-      color: C.green,
-      icon: TrendingUp,
-      // 修复路由 404：跳转到 Chat 并预填指令
-      onPress: () => {
-        hapticLight();
-        router.push({
-          pathname: '/(tabs)/commander-chat',
-          params: { prefill: '帮我开发新买家' },
-        });
-      },
-    },
-    {
-      label: '市场信号',
-      value: stats.marketSignals,
-      color: C.blue,
-      icon: Globe,
-      // 修复路由 404：跳转到 Chat 并预填指令
-      onPress: () => {
-        hapticLight();
-        router.push({
-          pathname: '/(tabs)/commander-chat',
-          params: { prefill: '扫描市场机会' },
-        });
-      },
-    },
-    {
-      label: '任务执行中',
-      value: stats.runningTasks,
-      color: '#A78BFA',
-      icon: Activity,
-      onPress: () => { hapticLight(); router.push('/task-progress'); },
-    },
-  ];
-
   return (
-    <View style={{ flex: 1, backgroundColor: '#000000' }}>
-      <LinearGradient
-        colors={['#0a0015', '#000000', '#000000']}
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+    <View style={{ flex: 1, backgroundColor: C.bg }}>
+      {/* 背景蓝色星云光晕 */}
+      <View
+        style={{
+          position: 'absolute', top: -80, left: SCREEN_W / 2 - 150,
+          width: 300, height: 300, borderRadius: 150,
+          backgroundColor: 'rgba(96,165,250,0.06)',
+        }}
+        pointerEvents="none"
       />
-
-      <SafeAreaView style={{ flex: 1 }}>
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
-
-          {/* Header */}
-          <View style={{
-            flexDirection: 'row', justifyContent: 'space-between',
-            alignItems: 'center', paddingHorizontal: 20, paddingTop: 8,
-          }}>
-            <Text style={{ color: C.t2, fontSize: 14 }}>{greeting}</Text>
-            <View style={{ flexDirection: 'row', gap: 16, alignItems: 'center' }}>
-              {stats.runningTasks > 0 && (
-                <Pressable onPress={() => router.push('/task-progress')}>
-                  <View style={{
-                    backgroundColor: '#7C3AED30',
-                    borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4,
-                    flexDirection: 'row', alignItems: 'center', gap: 5,
-                    borderWidth: 1, borderColor: '#7C3AED50',
-                  }}>
-                    <MotiView
-                      animate={{ opacity: [1, 0.3, 1] }}
-                      transition={{ loop: true, duration: 1500 }}
-                      style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#A78BFA' }}
-                    />
-                    <Text style={{ color: '#A78BFA', fontSize: 12, fontWeight: '600' }}>
-                      {stats.runningTasks} 任务执行中
-                    </Text>
-                  </View>
-                </Pressable>
-              )}
-              <Pressable onPress={() => { hapticLight(); router.push('/settings'); }}>
-                <Settings size={20} color={C.t2} />
-              </Pressable>
-            </View>
-          </View>
-
-          {/* Time Display */}
-          <View style={{ alignItems: 'center', paddingVertical: 28 }}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right']}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 100 }}
+        >
+          {/* ─── Section 1: Watch Face Header ─── */}
+          <MotiView
+            from={{ opacity: 0, translateY: -10 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ delay: 0, ...SPRING }}
+            style={{ alignItems: 'center', paddingTop: 20, paddingBottom: 16 }}
+          >
             <MotiText
               from={{ opacity: 0, scale: 0.92 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ type: 'spring', stiffness: 200, damping: 20 }}
               style={{
-                fontSize: 88, fontWeight: '100', color: C.t1,
-                letterSpacing: -4, lineHeight: 88,
+                fontSize: 80, fontWeight: '100', color: C.t1,
+                letterSpacing: -4, lineHeight: 80,
               }}
             >
               {hh}:{mm}
             </MotiText>
+            <Text style={{ color: C.t3, fontSize: 18, fontWeight: '100', marginTop: 2 }}>
+              {ss}
+            </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
               <MotiView
                 animate={{ opacity: [0.4, 1, 0.4] }}
@@ -218,64 +144,301 @@ export default function WatchFaceScreen() {
                 style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: C.green }}
               />
               <Text style={{ color: C.green, fontSize: 12, fontWeight: '500' }}>
-                AI 指挥中心运行中
+                {greeting}，老板 · AI 指挥中心运行中
               </Text>
             </View>
-          </View>
+          </MotiView>
 
-          {/* Quick Stats Grid — 数据来自 store */}
-          <View style={{ paddingHorizontal: 20, marginBottom: 24 }}>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-              {QUICK_STATS.map((stat, i) => (
-                <Pressable
-                  key={stat.label}
-                  onPress={stat.onPress}
-                  style={{ width: (SCREEN_W - 50) / 2 }}
+          {/* ─── Section 2: KPI Ring Dashboard ─── */}
+          <MotiView
+            from={{ opacity: 0, translateY: 20 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ delay: 80, ...SPRING }}
+            style={{ paddingHorizontal: 20, marginBottom: 16 }}
+          >
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              {KPI_RINGS.map((ring, i) => (
+                <View
+                  key={ring.label}
+                  style={{
+                    flex: 1,
+                    backgroundColor: 'rgba(255,255,255,0.04)',
+                    borderRadius: 14,
+                    borderWidth: 1,
+                    borderColor: 'rgba(255,255,255,0.08)',
+                    padding: 12,
+                    alignItems: 'center',
+                  }}
                 >
-                  <MotiView
-                    from={{ opacity: 0, translateY: 20 }}
-                    animate={{ opacity: 1, translateY: 0 }}
-                    transition={{ delay: i * 80, type: 'spring', stiffness: 300, damping: 25 }}
-                    style={{
-                      backgroundColor: 'rgba(255,255,255,0.04)',
-                      borderRadius: 16, padding: 16,
-                      borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
-                    }}
-                  >
-                    <stat.icon size={18} color={stat.color} />
-                    <Text style={{ color: stat.color, fontSize: 28, fontWeight: '700', marginTop: 8 }}>
-                      {stat.value}
-                    </Text>
-                    <Text style={{ color: C.t2, fontSize: 12, marginTop: 2 }}>{stat.label}</Text>
-                  </MotiView>
-                </Pressable>
+                  <View style={{ position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
+                    <PieChart
+                      data={ring.data}
+                      radius={30}
+                      innerRadius={22}
+                      donut
+                      showText={false}
+                    />
+                    <View
+                      style={{
+                        position: 'absolute',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Text style={{
+                        color: C.t1,
+                        fontSize: ring.centerFontSize,
+                        fontWeight: '100',
+                        lineHeight: ring.centerFontSize + 2,
+                      }}>
+                        {ring.centerText}
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={{ color: C.t3, fontSize: 9, marginTop: 6, textAlign: 'center' }}>
+                    {ring.label}
+                  </Text>
+                </View>
               ))}
             </View>
-          </View>
+          </MotiView>
 
-          {/* AI Agents Section — 状态从 store 派生 */}
-          <View style={{ paddingHorizontal: 20 }}>
+          {/* ─── Section 3: Revenue Trend ─── */}
+          <MotiView
+            from={{ opacity: 0, translateY: 20 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ delay: 160, ...SPRING }}
+            style={{ paddingHorizontal: 20, marginBottom: 16 }}
+          >
             <View style={{
-              flexDirection: 'row', justifyContent: 'space-between',
-              alignItems: 'center', marginBottom: 12,
+              backgroundColor: 'rgba(255,255,255,0.04)',
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: 'rgba(255,255,255,0.08)',
+              padding: 16,
             }}>
-              <Text style={{ color: C.t1, fontSize: 16, fontWeight: '600' }}>数字员工动态</Text>
-              <Pressable onPress={() => { hapticLight(); router.push('/digital-agents'); }}>
-                <Text style={{ color: '#A78BFA', fontSize: 13 }}>查看全部</Text>
-              </Pressable>
-            </View>
-            {AGENTS_CONFIG.map(agent => (
-              <AgentRow
-                key={agent.id}
-                agent={agent}
-                currentTask={agentTaskMap[agent.id]}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <Text style={{ color: C.t1, fontSize: 14, fontWeight: '600' }}>本月营收趋势</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <TrendingUp size={12} color={C.green} />
+                  <Text style={{ color: C.green, fontSize: 11 }}>+23%</Text>
+                </View>
+              </View>
+              <LineChart
+                data={REVENUE_DATA}
+                areaChart
+                color={C.blue}
+                startFillColor="rgba(96,165,250,0.3)"
+                endFillColor="rgba(96,165,250,0)"
+                hideDataPoints={false}
+                dataPointsColor={C.blue}
+                dataPointsRadius={3}
+                hideYAxisText
+                rulesColor="rgba(255,255,255,0.05)"
+                backgroundColor="transparent"
+                width={SCREEN_W - 72}
+                height={70}
+                initialSpacing={0}
+                spacing={(SCREEN_W - 72) / 12}
+                thickness={2}
+                xAxisColor="rgba(255,255,255,0.1)"
+                yAxisColor="transparent"
               />
-            ))}
-          </View>
+              <Text style={{ color: C.green, fontSize: 11, marginTop: 8 }}>
+                ↑ 本月 $138K · 同比 +23%
+              </Text>
+            </View>
+          </MotiView>
 
-          {/* Quick Action CTA — 数字来自 store */}
-          <View style={{ paddingHorizontal: 20, marginTop: 16 }}>
-            <Pressable onPress={() => { hapticMedium(); router.push('/(tabs)/decision-feed'); }}>
+          {/* ─── Section 4: Asset Health ─── */}
+          <MotiView
+            from={{ opacity: 0, translateY: 20 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ delay: 240, ...SPRING }}
+            style={{ paddingHorizontal: 20, marginBottom: 16 }}
+          >
+            <View style={{
+              backgroundColor: 'rgba(255,255,255,0.04)',
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: 'rgba(255,255,255,0.08)',
+              padding: 16,
+            }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Package size={16} color={C.blue} />
+                  <Text style={{ color: C.t1, fontSize: 14, fontWeight: '600' }}>资产能力包</Text>
+                </View>
+                <Pressable
+                  onPress={() => { hapticLight(); router.push('/asset-package' as any); }}
+                  style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+                >
+                  <Text style={{ color: C.blue, fontSize: 12 }}>查看全部 →</Text>
+                </Pressable>
+              </View>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+                {ASSET_PILLS.map(pill => (
+                  <View
+                    key={pill.name}
+                    style={{
+                      flexDirection: 'row', alignItems: 'center', gap: 6,
+                      backgroundColor: 'rgba(255,255,255,0.06)',
+                      borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6,
+                    }}
+                  >
+                    <Text style={{ fontSize: 12 }}>{pill.icon}</Text>
+                    <Text style={{ color: C.t2, fontSize: 11 }}>{pill.name}</Text>
+                    <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: pill.color }} />
+                    <Text style={{ color: pill.color, fontSize: 10 }}>{pill.detail}</Text>
+                  </View>
+                ))}
+              </View>
+              {/* 综合能力进度条 */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <View style={{ flex: 1, height: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.08)' }}>
+                  <MotiView
+                    from={{ width: '0%' }}
+                    animate={{ width: '87%' }}
+                    transition={{ delay: 600, duration: 800 }}
+                    style={{ height: 3, borderRadius: 2, backgroundColor: C.blue }}
+                  />
+                </View>
+                <Text style={{ color: C.t2, fontSize: 11 }}>综合能力 87分</Text>
+              </View>
+            </View>
+          </MotiView>
+
+          {/* ─── Section 5: Digital Team Status ─── */}
+          <MotiView
+            from={{ opacity: 0, translateY: 20 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ delay: 320, ...SPRING }}
+            style={{ paddingHorizontal: 20, marginBottom: 16 }}
+          >
+            <View style={{
+              backgroundColor: 'rgba(255,255,255,0.04)',
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: 'rgba(255,255,255,0.08)',
+              padding: 16,
+            }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Users size={16} color={C.blue} />
+                  <Text style={{ color: C.t1, fontSize: 14, fontWeight: '600' }}>数字员工</Text>
+                  <View style={{
+                    backgroundColor: 'rgba(16,185,129,0.15)',
+                    borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2,
+                  }}>
+                    <Text style={{ color: C.green, fontSize: 10, fontWeight: '600' }}>3人在线</Text>
+                  </View>
+                </View>
+                <Pressable
+                  onPress={() => { hapticLight(); router.push('/digital-agents'); }}
+                  style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+                >
+                  <Text style={{ color: C.blue, fontSize: 12 }}>查看全部 →</Text>
+                </Pressable>
+              </View>
+              {AGENTS_CONFIG.map((agent, i) => {
+                const task = agentTaskMap[agent.id];
+                return (
+                  <View
+                    key={agent.id}
+                    style={{
+                      flexDirection: 'row', alignItems: 'center', gap: 10,
+                      paddingVertical: 8,
+                      borderTopWidth: i > 0 ? 1 : 0,
+                      borderTopColor: 'rgba(255,255,255,0.05)',
+                    }}
+                  >
+                    <View style={{
+                      width: 32, height: 32, borderRadius: 16,
+                      backgroundColor: agent.color + '25',
+                      alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <Text style={{ color: agent.color, fontWeight: '700', fontSize: 13 }}>
+                        {agent.name[0]}
+                      </Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: C.t1, fontSize: 12, fontWeight: '600' }}>
+                        {agent.name} · {agent.role}
+                      </Text>
+                      <Text style={{ color: C.t2, fontSize: 10, marginTop: 1 }} numberOfLines={1}>
+                        {task ? task.title : agent.task}
+                      </Text>
+                    </View>
+                    <MotiView
+                      animate={{ scale: [1, 1.3, 1], opacity: [1, 0.5, 1] }}
+                      transition={{ loop: true, duration: 1600 }}
+                      style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: C.green }}
+                    />
+                  </View>
+                );
+              })}
+            </View>
+          </MotiView>
+
+          {/* ─── Section 6: Urgent Decision Banner ─── */}
+          <MotiView
+            from={{ opacity: 0, translateY: 20 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ delay: 400, ...SPRING }}
+            style={{ paddingHorizontal: 20, marginBottom: 16 }}
+          >
+            <Pressable
+              onPress={() => { hapticMedium(); router.push('/(tabs)/decision-feed'); }}
+              style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.97 : 1 }] })}
+            >
+              <MotiView
+                animate={{ opacity: [1, 0.75, 1] }}
+                transition={{ loop: true, duration: 2000 }}
+                style={{
+                  backgroundColor: 'rgba(245,158,11,0.1)',
+                  borderRadius: 14,
+                  borderWidth: 1,
+                  borderColor: 'rgba(245,158,11,0.3)',
+                  padding: 14,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 12,
+                }}
+              >
+                <View style={{
+                  width: 36, height: 36, borderRadius: 18,
+                  backgroundColor: 'rgba(245,158,11,0.2)',
+                  alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Zap size={18} color={C.amber} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: C.t1, fontSize: 13, fontWeight: '600' }}>
+                    Ahmed 询盘待回复
+                  </Text>
+                  <Text style={{ color: C.t2, fontSize: 11, marginTop: 2 }}>
+                    斋月季窗口仅剩 23 天 · 预估 $58,400
+                  </Text>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Text style={{ color: C.amber, fontSize: 12, fontWeight: '600' }}>立即处理</Text>
+                  <ChevronRight size={14} color={C.amber} />
+                </View>
+              </MotiView>
+            </Pressable>
+          </MotiView>
+
+          {/* ─── 决策数量 CTA ─── */}
+          <MotiView
+            from={{ opacity: 0, translateY: 20 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ delay: 480, ...SPRING }}
+            style={{ paddingHorizontal: 20 }}
+          >
+            <Pressable
+              onPress={() => { hapticMedium(); router.push('/(tabs)/decision-feed'); }}
+              style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.97 : 1 }] })}
+            >
               <LinearGradient
                 colors={['#7C3AED', '#5B21B6']}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
@@ -307,8 +470,7 @@ export default function WatchFaceScreen() {
                 </View>
               </LinearGradient>
             </Pressable>
-          </View>
-
+          </MotiView>
         </ScrollView>
       </SafeAreaView>
     </View>

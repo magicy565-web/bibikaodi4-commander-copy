@@ -1,295 +1,269 @@
-import { useState } from "react";
+/**
+ * Login — Commander Phone 登录页
+ * Apple Watch Ultra 风格 · 演示模式快速填充 · 跳过登录按钮
+ */
+import { useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  ActivityIndicator,
-} from "react-native";
-import { router } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as Haptics from "expo-haptics";
+  View, Text, TextInput, Pressable, ActivityIndicator,
+  KeyboardAvoidingView, Platform, ScrollView,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { MotiView } from 'moti';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react-native';
+import { hapticLight, hapticSuccess } from '@/constants/haptics';
+import { C, SPRING } from '@/constants/theme';
 
 export default function LoginScreen() {
-  const [phone, setPhone] = useState("18888888888");
-  const [password, setPassword] = useState("commander2026");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [emailFocused, setEmailFocused] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
 
-  const handleLogin = async () => {
-    if (!phone || !password) {
-      setError("请输入手机号和密码");
-      return;
-    }
-    setError("");
-    setLoading(true);
-    if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    // Demo: accept any credentials for MVP
-    await new Promise((r) => setTimeout(r, 800));
-    await AsyncStorage.setItem("commander_logged_in", "true");
-    await AsyncStorage.setItem("commander_user", JSON.stringify({
-      name: "王总",
-      company: "明辉照明有限公司",
-      phone,
-    }));
-    if (Platform.OS !== "web") {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }
-    setLoading(false);
-    router.replace("/(tabs)");
-  };
+  function fillDemo() {
+    hapticLight();
+    setEmail('demo@kabeq.com');
+    setPassword('demo123');
+  }
+
+  function handleLogin() {
+    hapticLight();
+    setIsLoading(true);
+    setTimeout(() => {
+      hapticSuccess();
+      router.replace('/(tabs)');
+    }, 1500);
+  }
+
+  function handleSkip() {
+    hapticLight();
+    router.replace('/(tabs)');
+  }
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="light" />
-      {/* Background gradient effect */}
-      <View style={styles.bgGlow} />
-      <View style={styles.bgGlow2} />
-
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardView}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
+    <View style={{ flex: 1, backgroundColor: C.bg }}>
+      <View
+        style={{
+          position: 'absolute', top: -60, left: '50%', marginLeft: -150,
+          width: 300, height: 300, borderRadius: 150,
+          backgroundColor: 'rgba(96,165,250,0.08)',
+        }}
+        pointerEvents="none"
+      />
+      <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right', 'bottom']}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          {/* Logo & Brand */}
-          <View style={styles.brandSection}>
-            <View style={styles.logoContainer}>
-              <View style={styles.logoInner}>
-                <Text style={styles.logoIcon}>⚡</Text>
-              </View>
-            </View>
-            <Text style={styles.appName}>Commander</Text>
-            <Text style={styles.tagline}>你的 AI 外贸指挥官</Text>
-          </View>
-
-          {/* Login Form */}
-          <View style={styles.formCard}>
-            <Text style={styles.formTitle}>登录</Text>
-            <Text style={styles.formSubtitle}>专属外贸老板的 AI 赋能手机</Text>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>手机号</Text>
-              <TextInput
-                style={styles.input}
-                value={phone}
-                onChangeText={setPhone}
-                placeholder="请输入手机号"
-                placeholderTextColor="rgba(255,255,255,0.25)"
-                keyboardType="phone-pad"
-                returnKeyType="next"
-                autoComplete="tel"
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>密码</Text>
-              <TextInput
-                style={styles.input}
-                value={password}
-                onChangeText={setPassword}
-                placeholder="请输入密码"
-                placeholderTextColor="rgba(255,255,255,0.25)"
-                secureTextEntry
-                returnKeyType="done"
-                onSubmitEditing={handleLogin}
-              />
-            </View>
-
-            {error ? (
-              <Text style={styles.errorText}>{error}</Text>
-            ) : null}
-
-            <Pressable
-              onPress={handleLogin}
-              disabled={loading}
-              style={({ pressed }) => [
-                styles.loginButton,
-                pressed && styles.loginButtonPressed,
-                loading && styles.loginButtonLoading,
-              ]}
+          <ScrollView
+            contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 24 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <MotiView
+              from={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0, ...SPRING }}
+              style={{ alignItems: 'center', marginBottom: 40 }}
             >
-              {loading ? (
-                <ActivityIndicator color="#fff" size="small" />
-              ) : (
-                <Text style={styles.loginButtonText}>登录</Text>
-              )}
-            </Pressable>
+              <View style={{
+                width: 96, height: 96, borderRadius: 48,
+                borderWidth: 1, borderColor: 'rgba(96,165,250,0.3)',
+                alignItems: 'center', justifyContent: 'center',
+                shadowColor: '#60A5FA', shadowRadius: 20, shadowOpacity: 0.5,
+                shadowOffset: { width: 0, height: 0 },
+                marginBottom: 20,
+              }}>
+                <LinearGradient
+                  colors={['#1e3a5f', '#0f1f3d']}
+                  style={{
+                    width: 80, height: 80, borderRadius: 40,
+                    alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  <Text style={{ fontSize: 40, fontWeight: '100', color: '#60A5FA', letterSpacing: 2 }}>C</Text>
+                </LinearGradient>
+              </View>
 
-            <Text style={styles.demoHint}>演示账号：任意手机号 + 密码即可登录</Text>
-          </View>
+              <MotiView
+                from={{ opacity: 0, translateY: 10 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                transition={{ delay: 150, ...SPRING }}
+                style={{ alignItems: 'center' }}
+              >
+                <Text style={{ fontSize: 22, fontWeight: '100', color: '#ffffff', letterSpacing: 10, marginBottom: 6 }}>
+                  COMMANDER
+                </Text>
+                <LinearGradient
+                  colors={['transparent', '#60A5FA', 'transparent']}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                  style={{ width: 120, height: 1, marginBottom: 12 }}
+                />
+              </MotiView>
 
-          {/* Footer */}
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Powered by RealSourcing AI</Text>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+              <MotiView
+                from={{ opacity: 0, translateY: 10 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                transition={{ delay: 250, ...SPRING }}
+                style={{ alignItems: 'center' }}
+              >
+                <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', letterSpacing: 3, marginBottom: 4 }}>
+                  你的 AI 外贸指挥官
+                </Text>
+                <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', letterSpacing: 2 }}>
+                  KABEQ · 卡贝奇专属版
+                </Text>
+              </MotiView>
+            </MotiView>
+
+            <MotiView
+              from={{ opacity: 0, translateY: 40 }}
+              animate={{ opacity: 1, translateY: 0 }}
+              transition={{ delay: 400, ...SPRING }}
+              style={{
+                backgroundColor: 'rgba(255,255,255,0.04)',
+                borderRadius: 24,
+                borderWidth: 1,
+                borderColor: 'rgba(255,255,255,0.08)',
+                padding: 28,
+                marginBottom: 20,
+              }}
+            >
+              <Text style={{
+                fontSize: 10, color: 'rgba(255,255,255,0.35)',
+                letterSpacing: 3, marginBottom: 24, textAlign: 'center',
+              }}>
+                登录指挥中心
+              </Text>
+
+              <View style={{
+                height: 52, borderRadius: 14,
+                backgroundColor: 'rgba(255,255,255,0.06)',
+                borderWidth: 1,
+                borderColor: emailFocused ? 'rgba(96,165,250,0.5)' : 'rgba(255,255,255,0.1)',
+                flexDirection: 'row', alignItems: 'center',
+                paddingHorizontal: 16, gap: 12, marginBottom: 12,
+              }}>
+                <Mail size={16} color="rgba(255,255,255,0.35)" />
+                <TextInput
+                  style={{ flex: 1, color: '#ffffff', fontSize: 15 }}
+                  placeholder="邮箱 / 手机号"
+                  placeholderTextColor="rgba(255,255,255,0.25)"
+                  value={email}
+                  onChangeText={setEmail}
+                  onFocus={() => setEmailFocused(true)}
+                  onBlur={() => setEmailFocused(false)}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  returnKeyType="next"
+                />
+              </View>
+
+              <View style={{
+                height: 52, borderRadius: 14,
+                backgroundColor: 'rgba(255,255,255,0.06)',
+                borderWidth: 1,
+                borderColor: passwordFocused ? 'rgba(96,165,250,0.5)' : 'rgba(255,255,255,0.1)',
+                flexDirection: 'row', alignItems: 'center',
+                paddingHorizontal: 16, gap: 12, marginBottom: 12,
+              }}>
+                <Lock size={16} color="rgba(255,255,255,0.35)" />
+                <TextInput
+                  style={{ flex: 1, color: '#ffffff', fontSize: 15 }}
+                  placeholder="密码"
+                  placeholderTextColor="rgba(255,255,255,0.25)"
+                  value={password}
+                  onChangeText={setPassword}
+                  onFocus={() => setPasswordFocused(true)}
+                  onBlur={() => setPasswordFocused(false)}
+                  secureTextEntry={!showPassword}
+                  returnKeyType="done"
+                  onSubmitEditing={handleLogin}
+                />
+                <Pressable
+                  onPress={() => { hapticLight(); setShowPassword(!showPassword); }}
+                  style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
+                >
+                  {showPassword
+                    ? <EyeOff size={16} color="rgba(255,255,255,0.35)" />
+                    : <Eye size={16} color="rgba(255,255,255,0.35)" />
+                  }
+                </Pressable>
+              </View>
+
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24 }}>
+                <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: 11 }}>演示账号</Text>
+                <Pressable
+                  onPress={fillDemo}
+                  style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, marginLeft: 8 })}
+                >
+                  <Text style={{ color: '#60A5FA', fontSize: 11 }}>demo@kabeq.com / demo123</Text>
+                </Pressable>
+              </View>
+
+              <Pressable
+                onPress={handleLogin}
+                disabled={isLoading}
+                style={({ pressed }) => ({
+                  transform: [{ scale: pressed ? 0.97 : 1 }],
+                  opacity: isLoading ? 0.8 : 1,
+                })}
+              >
+                <LinearGradient
+                  colors={['#3B82F6', '#1D4ED8']}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                  style={{
+                    height: 54, borderRadius: 16,
+                    flexDirection: 'row', alignItems: 'center',
+                    justifyContent: 'center', gap: 10,
+                  }}
+                >
+                  {isLoading ? (
+                    <ActivityIndicator color="#ffffff" />
+                  ) : (
+                    <>
+                      <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: '600' }}>进入指挥中心</Text>
+                      <ArrowRight size={18} color="#ffffff" />
+                    </>
+                  )}
+                </LinearGradient>
+              </Pressable>
+            </MotiView>
+
+            <MotiView
+              from={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 600, ...SPRING }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+                <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.08)' }} />
+                <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12, marginHorizontal: 12 }}>或</Text>
+                <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.08)' }} />
+              </View>
+
+              <Pressable
+                onPress={handleSkip}
+                style={({ pressed }) => ({ alignItems: 'center', opacity: pressed ? 0.6 : 1, marginBottom: 32 })}
+              >
+                <Text style={{
+                  color: 'rgba(255,255,255,0.35)', fontSize: 13,
+                  textDecorationLine: 'underline',
+                  textDecorationColor: 'rgba(255,255,255,0.2)',
+                }}>
+                  跳过登录 · 演示模式
+                </Text>
+              </Pressable>
+
+              <Text style={{ color: 'rgba(255,255,255,0.2)', fontSize: 10, textAlign: 'center', marginBottom: 24 }}>
+                Commander Phone · MVP v1.0 · 3月12日演示版
+              </Text>
+            </MotiView>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#000000",
-  },
-  bgGlow: {
-    position: "absolute",
-    top: -100,
-    left: -100,
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    backgroundColor: "rgba(124,58,237,0.15)",
-  },
-  bgGlow2: {
-    position: "absolute",
-    bottom: 100,
-    right: -80,
-    width: 250,
-    height: 250,
-    borderRadius: 125,
-    backgroundColor: "rgba(96,165,250,0.08)",
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: "center",
-    paddingHorizontal: 24,
-    paddingVertical: 60,
-  },
-  brandSection: {
-    alignItems: "center",
-    marginBottom: 40,
-  },
-  logoContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 22,
-    backgroundColor: "rgba(124,58,237,0.25)",
-    borderWidth: 1,
-    borderColor: "rgba(124,58,237,0.5)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-  },
-  logoInner: {
-    width: 60,
-    height: 60,
-    borderRadius: 16,
-    backgroundColor: "rgba(124,58,237,0.4)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  logoIcon: {
-    fontSize: 32,
-  },
-  appName: {
-    fontSize: 32,
-    fontWeight: "900",
-    color: "rgba(255,255,255,0.95)",
-    letterSpacing: 1,
-    marginBottom: 6,
-  },
-  tagline: {
-    fontSize: 14,
-    color: "rgba(255,255,255,0.45)",
-    letterSpacing: 0.5,
-  },
-  formCard: {
-    backgroundColor: "rgba(255,255,255,0.05)",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-    padding: 24,
-    marginBottom: 24,
-  },
-  formTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "rgba(255,255,255,0.92)",
-    marginBottom: 4,
-  },
-  formSubtitle: {
-    fontSize: 13,
-    color: "rgba(255,255,255,0.45)",
-    marginBottom: 24,
-  },
-  inputGroup: {
-    marginBottom: 16,
-  },
-  inputLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "rgba(255,255,255,0.55)",
-    marginBottom: 8,
-    letterSpacing: 0.5,
-    textTransform: "uppercase",
-  },
-  input: {
-    backgroundColor: "rgba(255,255,255,0.07)",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: "rgba(255,255,255,0.92)",
-  },
-  errorText: {
-    color: "#F87171",
-    fontSize: 13,
-    marginBottom: 12,
-    textAlign: "center",
-  },
-  loginButton: {
-    backgroundColor: "#7C3AED",
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: "center",
-    marginTop: 8,
-    shadowColor: "#7C3AED",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  loginButtonPressed: {
-    transform: [{ scale: 0.97 }],
-    opacity: 0.9,
-  },
-  loginButtonLoading: {
-    opacity: 0.7,
-  },
-  loginButtonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "700",
-    letterSpacing: 0.5,
-  },
-  demoHint: {
-    fontSize: 11,
-    color: "rgba(255,255,255,0.25)",
-    textAlign: "center",
-    marginTop: 12,
-  },
-  footer: {
-    alignItems: "center",
-  },
-  footerText: {
-    fontSize: 12,
-    color: "rgba(255,255,255,0.2)",
-  },
-});

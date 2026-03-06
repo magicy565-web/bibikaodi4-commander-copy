@@ -372,7 +372,12 @@ function SwipeableCard({ card, onConfirm, onDismiss }: {
                   <Text style={{ color: C.t3, fontSize: 11 }}>{card.source}</Text>
                 </View>
 
-                <Text style={{ color: C.t1, fontSize: 16, fontWeight: '700', marginBottom: 8, lineHeight: 22 }}>{card.title}</Text>
+                <Pressable
+                  onPress={() => { hapticLight(); router.push(`/market-intel/${card.id}` as any); }}
+                  style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
+                >
+                  <Text style={{ color: C.t1, fontSize: 16, fontWeight: '700', marginBottom: 8, lineHeight: 22 }}>{card.title}</Text>
+                </Pressable>
                 <Text style={{ color: C.t2, fontSize: 13, lineHeight: 19 }}>{card.summary}</Text>
 
                 {/* Metrics 横向滚动 chip */}

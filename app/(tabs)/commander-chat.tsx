@@ -20,6 +20,7 @@ import { hapticLight, hapticSuccess, hapticWarning, hapticMedium } from '@/const
 import { C, SPRING, SPRING_GENTLE } from '@/constants/theme';
 import { useStore } from '@/constants/store';
 import { callCommanderAI, AIPlan } from '@/services/ai';
+import { trpc } from '@/lib/trpc';
 
 // ─── 类型定义 ─────────────────────────────────────────────────
 
@@ -416,6 +417,8 @@ export default function CommanderChatScreen() {
     return pendingMsg?.plan;
   }, [messages]);
 
+  const commanderChatMutation = trpc.ai.commanderChat.useMutation();
+
   const sendMessage = async (text: string, isRevisionHint = false) => {
     if (!text.trim() || isLoading) return;
 
@@ -445,7 +448,25 @@ export default function CommanderChatScreen() {
 
     try {
       const currentPlan = isRevisionHint ? getActivePlan() : undefined;
-      const aiPlan = await callCommanderAI(text, getHistory(), currentPlan);
+      // 优先使用 tRPC server-side LLM，失败时回退到本地 mock
+      let aiPlan: AIPlan;
+      try {
+        const serverResult = await commanderChatMutation.mutateAsync({
+          userMessage: text,
+          conversationHistory: getHistory(),
+          currentPlan: currentPlan ? {
+            type: currentPlan.type,
+            title: currentPlan.title,
+            suggestedAction: currentPlan.suggestedAction,
+            channel: currentPlan.channel,
+            agentName: currentPlan.agentName,
+          } : undefined,
+        });
+        aiPlan = serverResult as AIPlan;
+      } catch {
+        // 回退到本地 mock（离线模式）
+        aiPlan = await callCommanderAI(text, getHistory(), currentPlan);
+      }
 
       const aiMsg: Message = {
         id: `a-${Date.now()}`,
